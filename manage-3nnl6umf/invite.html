@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dough VIP · Invite Generator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --gold: #C9A84C;
+      --gold-light: #E8C96A;
+      --gold-dark: #9A7A30;
+      --gold-glow: rgba(201,168,76,0.3);
+      --bg: #0A0A0A;
+      --surface: #111111;
+      --surface2: #1A1A1A;
+      --border: #2A2A2A;
+      --border-focus: rgba(201,168,76,0.5);
+      --text: #f0ead6;
+      --text-muted: #888;
+      --text-placeholder: #444;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Montserrat', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 40px 20px 60px;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(ellipse at 50% 0%, rgba(201,168,76,0.05) 0%, transparent 60%);
+      pointer-events: none;
+    }
+
+    .page { width: 100%; max-width: 480px; position: relative; }
+
+    /* Header */
+    .page-header { text-align: center; margin-bottom: 32px; }
+    .page-brand {
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic;
+      font-size: 13px;
+      letter-spacing: 6px;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 6px;
+    }
+    .page-title { font-size: 20px; font-weight: 600; color: #fff; margin-bottom: 6px; letter-spacing: 0.5px; }
+    .page-sub { font-size: 12px; color: var(--text-muted); line-height: 1.6; }
+
+    /* Card */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 24px;
+      margin-bottom: 14px;
+    }
+    .card-title {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--gold-dark);
+      margin-bottom: 18px;
+    }
+
+    /* Fields */
+    .field { margin-bottom: 16px; }
+    .field:last-child { margin-bottom: 0; }
+    label {
+      display: block;
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+    input, select {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 14px;
+      color: var(--text);
+      font-family: 'Montserrat', sans-serif;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+      -webkit-appearance: none;
+    }
+    input::placeholder { color: var(--text-placeholder); }
+    input:focus, select:focus { border-color: var(--gold); }
+    .hint { font-size: 11px; color: #555; margin-top: 6px; line-height: 1.5; }
+
+    /* Offer rows */
+    .offer-row {
+      background: var(--surface2);
+      border: 1px solid #1f1a08;
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .offer-row-head { display: flex; justify-content: space-between; align-items: center; }
+    .offer-row-num { font-size: 10px; letter-spacing: 2px; color: var(--gold-dark); text-transform: uppercase; }
+    .offer-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .offer-fields input { font-size: 13px; padding: 9px 11px; }
+    .offer-row input.full { font-size: 13px; padding: 9px 11px; }
+
+    .add-offer-btn {
+      background: none;
+      border: 1px dashed rgba(201,168,76,0.25);
+      border-radius: 8px;
+      padding: 11px;
+      color: var(--gold-dark);
+      font-size: 11px;
+      letter-spacing: 1px;
+      font-family: 'Montserrat', sans-serif;
+      cursor: pointer;
+      width: 100%;
+      transition: all 0.2s;
+      margin-top: 12px;
+    }
+    .add-offer-btn:hover { border-color: var(--gold); color: var(--gold); }
+    .add-offer-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .remove-offer {
+      background: none;
+      border: none;
+      color: rgba(255,100,100,0.5);
+      cursor: pointer;
+      font-size: 11px;
+      letter-spacing: 1px;
+      font-family: 'Montserrat', sans-serif;
+      padding: 0;
+    }
+    .remove-offer:hover { color: #ff7777; }
+
+    /* Generate button */
+    .generate-btn {
+      width: 100%;
+      padding: 16px;
+      background: linear-gradient(135deg, var(--gold-dark), var(--gold), var(--gold-light));
+      border: none;
+      border-radius: 10px;
+      color: #000;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.2s;
+      margin-top: 8px;
+    }
+    .generate-btn:hover { opacity: 0.92; transform: translateY(-1px); }
+
+    /* Result */
+    .result-card {
+      display: none;
+      background: var(--surface);
+      border: 1px solid rgba(201,168,76,0.3);
+      border-radius: 14px;
+      padding: 22px 24px;
+      margin-top: 14px;
+      animation: fadeIn 0.4s ease;
+    }
+    .result-card.visible { display: block; }
+    .result-title {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 14px;
+    }
+    .link-box {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 14px;
+      font-size: 12px;
+      color: var(--gold-light);
+      word-break: break-all;
+      line-height: 1.5;
+      margin-bottom: 12px;
+      font-family: monospace;
+    }
+    .action-row { display: flex; gap: 8px; flex-wrap: wrap; }
+    .action-btn {
+      flex: 1;
+      min-width: 110px;
+      padding: 11px 14px;
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      transition: all 0.2s;
+      text-align: center;
+      font-family: 'Montserrat', sans-serif;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    .btn-copy { background: var(--surface2); color: var(--gold); border-color: var(--border); }
+    .btn-copy:hover { border-color: var(--gold); }
+    .btn-copy.copied { background: #1a2a1a; color: #4ADE80; border-color: #2d5a2d; }
+    .btn-whatsapp { background: #1a3a1a; color: #4ADE80; border-color: #2d5a2d; }
+    .btn-whatsapp:hover { border-color: #4ADE80; }
+    .btn-whatsapp svg { width: 14px; height: 14px; fill: #4ADE80; }
+    .btn-preview { background: rgba(255,255,255,0.04); color: var(--text-muted); border-color: rgba(255,255,255,0.08); }
+    .btn-preview:hover { color: #fff; }
+
+    /* WhatsApp preview */
+    .wa-preview {
+      display: none;
+      margin-top: 14px;
+      background: var(--surface2);
+      border: 1px solid #1f4a1f;
+      border-radius: 8px;
+      padding: 14px;
+    }
+    .wa-preview.visible { display: block; }
+    .wa-preview-label {
+      font-size: 9px;
+      letter-spacing: 2px;
+      color: #4ADE80;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    .wa-preview-text {
+      font-size: 12px;
+      color: #aaa;
+      line-height: 1.6;
+      white-space: pre-line;
+    }
+
+    /* Note */
+    .note {
+      background: rgba(201,168,76,0.04);
+      border: 1px solid rgba(201,168,76,0.12);
+      border-radius: 10px;
+      padding: 14px 16px;
+      font-size: 11px;
+      color: var(--text-muted);
+      line-height: 1.7;
+      margin-top: 24px;
+    }
+    .note strong { color: var(--gold-light); font-weight: 500; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+
+    <!-- Header -->
+    <div class="page-header">
+      <div class="page-brand">Dough · Internal Tool</div>
+      <div class="page-title">VIP Invite Generator</div>
+      <div class="page-sub">Create a private invite link for a VIP member.<br>This page is for your eyes only.</div>
+    </div>
+
+    <!-- Where vip.html is hosted -->
+    <div class="card">
+      <div class="card-title">Card URL</div>
+      <div class="field">
+        <label>Where is vip.html hosted?</label>
+        <input type="text" id="baseUrl" placeholder="https://yourdomain.com/vip.html" autocomplete="off" />
+        <div class="hint">Paste the full URL where vip.html lives online. Saved on this device.</div>
+      </div>
+    </div>
+
+    <!-- Member Details -->
+    <div class="card">
+      <div class="card-title">Member Details</div>
+
+      <div class="field">
+        <label>Full Name</label>
+        <input type="text" id="memberName" placeholder="e.g. Sarah Johnson" autocomplete="off" />
+      </div>
+
+      <div class="field">
+        <label>Birthday (optional)</label>
+        <input type="date" id="memberBirthday" />
+        <div class="hint">If set, the card will activate the birthday banner automatically on that day.</div>
+      </div>
+
+      <div class="field">
+        <label>Birthday Reward (optional override)</label>
+        <input type="text" id="birthdayReward" placeholder="e.g. Free pizza & a glass of Prosecco 🥂" />
+        <div class="hint">Leave blank to use the default reward shown in vip.html.</div>
+      </div>
+
+      <div class="field">
+        <label>Valid Until</label>
+        <input type="date" id="memberExpiry" />
+        <div class="hint">Defaults to 1 year from today. Card stops working after this date — member sees a renewal screen.</div>
+      </div>
+    </div>
+
+    <!-- Custom Offers -->
+    <div class="card">
+      <div class="card-title">Personal Offers (optional)</div>
+      <div style="font-size:12px; color:var(--text-muted); margin-bottom:14px; line-height:1.6;">
+        Add up to 3 offers shown only on <strong style="color:#fff;">this member's</strong> card (above the standard benefits). Leave empty to show only the standard benefits.
+      </div>
+
+      <div id="offersContainer"></div>
+
+      <button class="add-offer-btn" id="addOfferBtn" onclick="addOffer()">+ Add a Personal Offer</button>
+    </div>
+
+    <!-- Generate -->
+    <button class="generate-btn" onclick="generate()">Generate Private Link</button>
+
+    <!-- Result -->
+    <div class="result-card" id="resultCard">
+      <div class="result-title">Invite Link Ready</div>
+      <div class="link-box" id="linkBox"></div>
+
+      <div class="action-row">
+        <button class="action-btn btn-copy" id="copyBtn" onclick="copyLink()">Copy Link</button>
+        <button class="action-btn btn-whatsapp" onclick="showWhatsApp()">
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+          WhatsApp
+        </button>
+        <a class="action-btn btn-preview" id="previewBtn" href="#" target="_blank" rel="noopener" onclick="return previewLink(event)">Preview</a>
+      </div>
+
+      <div class="wa-preview" id="waPreview">
+        <div class="wa-preview-label">Tap WhatsApp to open with this message · Also copied to clipboard</div>
+        <div class="wa-preview-text" id="waPreviewText"></div>
+      </div>
+    </div>
+
+    <!-- Note -->
+    <div class="note">
+      <strong>💰 Membership: £50/year — take payment at the till BEFORE generating the link.</strong> Don't send free invites by accident.<br><br>
+      <strong>How it works:</strong> Each link contains a unique encoded token with the member's name, birthday, expiry and personal offers. Only people who receive the link from you can access the card. When the expiry date passes, the card stops working and shows a renewal screen.<br><br>
+      <strong>To change the standard benefits or your WhatsApp number:</strong> open <strong>vip.html</strong> in a text editor — config is at the top of the &lt;script&gt; block.
+    </div>
+
+  </div>
+
+  <script>
+    // ─────────────────────────────────────────────
+    //  CONFIG
+    // ─────────────────────────────────────────────
+
+    // Default live URL — pre-filled on first use, can be overridden
+    const DEFAULT_CARD_URL = 'https://jzgn6kgy7z-debug.github.io/dough-vip/vip.html';
+
+    // Restore saved base URL (or use default)
+    const STORAGE_KEY = 'dough_invite_base_url';
+    const savedBase = localStorage.getItem(STORAGE_KEY);
+    document.getElementById('baseUrl').value = savedBase || DEFAULT_CARD_URL;
+
+    // Default expiry: 1 year from today (yyyy-mm-dd)
+    (function setDefaultExpiry() {
+      const d = new Date();
+      d.setFullYear(d.getFullYear() + 1);
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      const expEl = document.getElementById('memberExpiry');
+      if (expEl) expEl.value = yyyy + '-' + mm + '-' + dd;
+    })();
+
+    // ─────────────────────────────────────────────
+    //  OFFER ROWS
+    // ─────────────────────────────────────────────
+
+    const MAX_OFFERS = 3;
+    let offerCount = 0;
+
+    function addOffer() {
+      if (offerCount >= MAX_OFFERS) return;
+      offerCount++;
+      const id = offerCount;
+      const container = document.getElementById('offersContainer');
+
+      const row = document.createElement('div');
+      row.className = 'offer-row';
+      row.id = 'offerRow' + id;
+      row.innerHTML =
+        '<div class="offer-row-head">' +
+          '<span class="offer-row-num">Offer ' + id + '</span>' +
+          '<button class="remove-offer" onclick="removeOffer(' + id + ')">Remove</button>' +
+        '</div>' +
+        '<div class="offer-fields">' +
+          '<input type="text" id="offerIcon' + id + '" placeholder="Icon  e.g. 🏷️" />' +
+          '<input type="text" id="offerTag' + id + '" placeholder="Tag  e.g. 10% OFF" />' +
+        '</div>' +
+        '<input class="full" type="text" id="offerTitle' + id + '" placeholder="Title  e.g. VIP Discount" />' +
+        '<input class="full" type="text" id="offerDesc' + id + '" placeholder="Description (optional)" />';
+      container.appendChild(row);
+
+      if (offerCount >= MAX_OFFERS) {
+        document.getElementById('addOfferBtn').disabled = true;
+      }
+    }
+
+    function removeOffer(id) {
+      const row = document.getElementById('offerRow' + id);
+      if (row) row.remove();
+      document.getElementById('addOfferBtn').disabled = false;
+    }
+
+    function getOffers() {
+      const offers = [];
+      for (let i = 1; i <= MAX_OFFERS; i++) {
+        const titleEl = document.getElementById('offerTitle' + i);
+        if (!titleEl) continue;
+        const title = titleEl.value.trim();
+        if (!title) continue;
+        offers.push({
+          icon: document.getElementById('offerIcon' + i).value.trim() || '✦',
+          tag: document.getElementById('offerTag' + i).value.trim() || 'VIP',
+          title: title,
+          desc: document.getElementById('offerDesc' + i).value.trim()
+        });
+      }
+      return offers;
+    }
+
+    // ─────────────────────────────────────────────
+    //  GENERATE
+    // ─────────────────────────────────────────────
+
+    let currentLink = '';
+    let currentName = '';
+
+    function flashError(el) {
+      el.style.borderColor = 'rgba(255,100,100,0.6)';
+      el.focus();
+      setTimeout(() => { el.style.borderColor = ''; }, 2000);
+    }
+
+    function generate() {
+      const baseEl = document.getElementById('baseUrl');
+      const nameEl = document.getElementById('memberName');
+      const base = baseEl.value.trim();
+      const name = nameEl.value.trim();
+
+      if (!base) { flashError(baseEl); return; }
+      if (!name) { flashError(nameEl); return; }
+
+      // Block past expiry dates — would create a born-expired card
+      const expiryEl = document.getElementById('memberExpiry');
+      const expiry = expiryEl.value;
+      if (expiry) {
+        const todayStr = new Date().toISOString().split('T')[0];
+        if (expiry < todayStr) {
+          flashError(expiryEl);
+          alert('⚠️ Valid Until is in the past (' + expiry + ').\n\nThis would create a card that is already expired. Please pick today or a future date.');
+          return;
+        }
+      }
+
+      // Save base URL for next time
+      localStorage.setItem(STORAGE_KEY, base);
+
+      const data = { name: name };
+      const bday = document.getElementById('memberBirthday').value;
+      if (bday) data.birthday = bday;
+      const reward = document.getElementById('birthdayReward').value.trim();
+      if (reward) data.birthdayReward = reward;
+      if (expiry) data.expiry = expiry;
+      const offers = getOffers();
+      if (offers.length > 0) data.offers = offers;
+
+      // URL-safe base64 (so the token survives in a URL)
+      const token = btoa(unescape(encodeURIComponent(JSON.stringify(data))))
+        .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+
+      // Append ?m=token (or &m= if base already has a query string)
+      const sep = base.includes('?') ? '&' : '?';
+      currentLink = base + sep + 'm=' + token;
+      currentName = name;
+
+      document.getElementById('linkBox').textContent = currentLink;
+      document.getElementById('previewBtn').href = currentLink;
+
+      const resultCard = document.getElementById('resultCard');
+      resultCard.classList.add('visible');
+      // Force-scroll the result into view (top of the result card aligned to top of viewport)
+      setTimeout(() => {
+        resultCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 50);
+
+      // Reset state
+      document.getElementById('waPreview').classList.remove('visible');
+      const copyBtn = document.getElementById('copyBtn');
+      copyBtn.textContent = 'Copy Link';
+      copyBtn.classList.remove('copied');
+    }
+
+    function previewLink(e) {
+      if (!currentLink) { e.preventDefault(); return false; }
+      // Try new tab first; if blocked (sandboxed preview), fall back to same window
+      const w = window.open(currentLink, '_blank');
+      if (!w || w.closed || typeof w.closed === 'undefined') {
+        e.preventDefault();
+        window.location.href = currentLink;
+        return false;
+      }
+      e.preventDefault();
+      return false;
+    }
+
+    function copyLink() {
+      if (!currentLink) return;
+      navigator.clipboard.writeText(currentLink).then(() => {
+        const btn = document.getElementById('copyBtn');
+        btn.textContent = '✓ Copied';
+        btn.classList.add('copied');
+        setTimeout(() => {
+          btn.textContent = 'Copy Link';
+          btn.classList.remove('copied');
+        }, 2000);
+      });
+    }
+
+    function showWhatsApp() {
+      if (!currentLink) return;
+      const firstName = currentName.split(' ')[0];
+      const msg =
+        'Hi ' + firstName + '! 🌟\n\n' +
+        "You've been personally selected as a Dough VIP member.\n\n" +
+        'Your private gold card is waiting — tap the link below for your exclusive offers:\n\n' +
+        currentLink + '\n\n' +
+        'Keep this link private — it\'s just for you.\n\n— The Dough Team';
+
+      // Copy to clipboard so they can paste it anywhere
+      navigator.clipboard.writeText(msg).catch(() => {});
+
+      // Show the preview
+      document.getElementById('waPreviewText').textContent = msg;
+      document.getElementById('waPreview').classList.add('visible');
+
+      // Also open wa.me with the message prefilled
+      window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
+    }
+  </script>
+</body>
+</html>
