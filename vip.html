@@ -262,6 +262,16 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
     <div class="vip-badge">Gold Member</div>
   </div>
 
+  <!-- Save to Home Screen hint (shows once, dismissible) -->
+  <div id="saveHint" style="display:none;background:rgba(201,168,76,0.08);border:1px solid var(--gold-dark);border-radius:10px;padding:12px 14px;margin-bottom:18px;font-size:12px;color:#ddd;line-height:1.5;display:flex;align-items:flex-start;gap:10px;">
+    <span style="color:var(--gold);font-size:14px;line-height:1.2;">✦</span>
+    <div style="flex:1;">
+      <strong style="color:var(--gold-light);">Save your card</strong><br>
+      <span style="font-size:11px;color:var(--text-muted);">Tap the Share icon below, then "Add to Home Screen" so you can open it with one tap.</span>
+    </div>
+    <button onclick="dismissSaveHint()" style="background:none;border:none;color:var(--text-muted);font-size:18px;cursor:pointer;padding:0 0 0 8px;line-height:1;">×</button>
+  </div>
+
   <div class="birthday-banner" id="birthdayBanner">
     <div class="birthday-icon">🎂</div>
     <div class="birthday-banner-title">Happy Birthday!</div>
@@ -596,6 +606,18 @@ if (member && member.name && isExpired(member.expiry)) {
     const _bd = document.querySelector('#birthdayBanner .birthday-banner-desc');
     if (_bd) _bd.textContent = member.birthdayReward;
   }
+
+  // Show "Save to Home Screen" hint once per member
+  const hintKey = memberKey + '_save_hint_dismissed';
+  if (!localStorage.getItem(hintKey)) {
+    const hint = document.getElementById('saveHint');
+    if (hint) hint.style.display = 'flex';
+  }
+  window.dismissSaveHint = function() {
+    localStorage.setItem(hintKey, '1');
+    const hint = document.getElementById('saveHint');
+    if (hint) hint.style.display = 'none';
+  };
 
   // ── Personal offers from token (optional) ──
   if (Array.isArray(member.offers) && member.offers.length > 0) {
