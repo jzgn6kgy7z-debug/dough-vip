@@ -351,10 +351,24 @@
         <a class="action-btn btn-preview" id="previewBtn" href="#" target="_blank" rel="noopener" onclick="return previewLink(event)">Preview</a>
       </div>
 
+      <button class="action-btn btn-copy" id="copyTrackerBtn" onclick="copyTrackerRow()" style="width:100%;margin-top:10px;">📋 Copy Row for Tracker Spreadsheet</button>
+
       <div class="wa-preview" id="waPreview">
         <div class="wa-preview-label">Tap WhatsApp to open with this message · Also copied to clipboard</div>
         <div class="wa-preview-text" id="waPreviewText"></div>
       </div>
+    </div>
+
+    <!-- Recent Invites Log -->
+    <div class="card" id="recentInvitesCard" style="margin-top:14px;">
+      <div class="card-title" style="display:flex;align-items:center;justify-content:space-between;">
+        <span>Recent Invites <span id="recentCount" style="color:var(--text-muted);font-weight:400;letter-spacing:1px;">(0)</span></span>
+        <button onclick="exportInvitesCSV()" id="exportCsvBtn" style="background:rgba(201,168,76,0.1);color:var(--gold);border:1px solid var(--gold-dark);border-radius:6px;padding:5px 10px;font-size:9px;letter-spacing:1.5px;font-family:'Montserrat',sans-serif;font-weight:600;cursor:pointer;text-transform:uppercase;">Export CSV</button>
+      </div>
+      <div id="recentInvitesList" style="max-height:280px;overflow-y:auto;font-size:12px;color:var(--text-muted);">
+        <div style="padding:14px 0;text-align:center;font-size:11px;color:#555;">No invites generated yet on this device.</div>
+      </div>
+      <button onclick="clearInvitesLog()" id="clearLogBtn" style="background:none;border:1px dashed rgba(255,100,100,0.2);color:rgba(255,100,100,0.5);border-radius:6px;padding:8px;font-size:10px;font-family:'Montserrat',sans-serif;cursor:pointer;width:100%;margin-top:10px;letter-spacing:1px;text-transform:uppercase;display:none;">Clear Log</button>
     </div>
 
     <!-- Note -->
@@ -512,6 +526,18 @@
         resultCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }, 50);
 
+      // Auto-log this invite locally
+      const _now = new Date();
+      const _genStr = String(_now.getDate()).padStart(2,'0') + '/' + String(_now.getMonth()+1).padStart(2,'0') + '/' + _now.getFullYear();
+      const _expFmt = function(s) { if (!s) return ''; const [y,m,d] = s.split('-'); return d + '/' + m + '/' + y; };
+      logInvite({
+        name: currentName,
+        link: currentLink,
+        generatedOn: _genStr,
+        expiryOn: _expFmt(expiry),
+        birthdayOn: _expFmt(bday)
+      });
+
       // Reset state
       document.getElementById('waPreview').classList.remove('visible');
       const copyBtn = document.getElementById('copyBtn');
@@ -545,6 +571,141 @@
       });
     }
 
+    // ─────────────────────────────────────────────
+    //  RECENT INVITES LOG (persists on this device)
+    // ─────────────────────────────────────────────
+    const LOG_KEY = 'dough_invite_log_v1';
+
+    function loadInvitesLog() {
+      try { return JSON.parse(localStorage.getItem(LOG_KEY) || '[]'); }
+      catch(e) { return []; }
+    }
+    function saveInvitesLog(log) {
+      localStorage.setItem(LOG_KEY, JSON.stringify(log));
+    }
+    function logInvite(entry) {
+      const log = loadInvitesLog();
+      log.unshift(entry);  // newest first
+      if (log.length > 100) log.length = 100;  // cap
+      saveInvitesLog(log);
+      renderInvitesLog();
+    }
+    function renderInvitesLog() {
+      const log = loadInvitesLog();
+      const list = document.getElementById('recentInvitesList');
+      const count = document.getElementById('recentCount');
+      const clearBtn = document.getElementById('clearLogBtn');
+      if (!list) return;
+      count.textContent = '(' + log.length + ')';
+      clearBtn.style.display = log.length > 0 ? 'block' : 'none';
+      if (log.length === 0) {
+        list.innerHTML = '<div style="padding:14px 0;text-align:center;font-size:11px;color:#555;">No invites generated yet on this device.</div>';
+        return;
+      }
+      list.innerHTML = log.map(function(e, i) {
+        return '<div style="padding:10px 0;border-bottom:1px solid #1a1a1a;display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">' +
+          '<div style="flex:1;min-width:0;">' +
+            '<div style="color:var(--gold-light);font-size:13px;font-weight:500;">' + escapeHtml(e.name) + '</div>' +
+            '<div style="font-size:10px;color:#666;margin-top:2px;">Generated ' + e.generatedOn + ' · Valid until ' + (e.expiryOn || '—') + '</div>' +
+          '</div>' +
+          '<button onclick="resendInvite(' + i + ')" style="background:rgba(37,211,102,0.08);color:#4ADE80;border:1px solid rgba(37,211,102,0.2);border-radius:5px;padding:4px 8px;font-size:9px;font-family:Montserrat,sans-serif;letter-spacing:1px;cursor:pointer;text-transform:uppercase;white-space:nowrap;">Resend</button>' +
+        '</div>';
+      }).join('');
+    }
+    function escapeHtml(s) {
+      return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+    }
+    function resendInvite(idx) {
+      const log = loadInvitesLog();
+      const e = log[idx];
+      if (!e || !e.link) return;
+      const firstName = e.name.split(' ')[0];
+      const msg =
+        'Hi ' + firstName + '! 🌟\n\n' +
+        "Here's your Dough VIP link again:\n\n" +
+        e.link + '\n\n' +
+        '👉 Tap the Share icon once open → "Add to Home Screen" to save it as an app.\n\n— The Dough Team';
+      navigator.clipboard.writeText(msg).catch(function(){});
+      window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
+    }
+    function clearInvitesLog() {
+      if (!confirm('Clear all logged invites on this device? Your master spreadsheet is NOT affected. This only clears the local history.')) return;
+      localStorage.removeItem(LOG_KEY);
+      renderInvitesLog();
+    }
+    function exportInvitesCSV() {
+      const log = loadInvitesLog();
+      if (log.length === 0) { alert('No invites to export yet.'); return; }
+      const header = ['Name','Generated On','Valid Until','Birthday','Paid £','Link'];
+      const rows = log.map(function(e) {
+        return [e.name, e.generatedOn, e.expiryOn || '', e.birthdayOn || '', '50', e.link];
+      });
+      const csv = [header].concat(rows).map(function(r) {
+        return r.map(function(c) {
+          const s = String(c == null ? '' : c);
+          // Quote if contains comma, quote, or newline
+          if (/[",\n]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+          return s;
+        }).join(',');
+      }).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const today = new Date().toISOString().split('T')[0];
+      a.href = url;
+      a.download = 'dough-vip-invites-' + today + '.csv';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+    }
+
+    // Render on page load
+    renderInvitesLog();
+
+    function copyTrackerRow() {
+      if (!currentLink || !currentName) return;
+      const today = new Date();
+      const todayStr = String(today.getDate()).padStart(2,'0') + '/' + String(today.getMonth()+1).padStart(2,'0') + '/' + today.getFullYear();
+      const expiryVal = document.getElementById('memberExpiry').value;
+      let expiryStr = '';
+      if (expiryVal) {
+        const [y,m,d] = expiryVal.split('-');
+        expiryStr = d + '/' + m + '/' + y;
+      }
+      const bdayVal = document.getElementById('memberBirthday').value;
+      let bdayStr = '';
+      if (bdayVal) {
+        const [y,m,d] = bdayVal.split('-');
+        bdayStr = d + '/' + m + '/' + y;
+      }
+      // Tab-separated row matching the spreadsheet columns:
+      // # | Name | Phone | Joined | Expiry | Days | Status | Birthday | Paid | Link | Notes
+      // We fill: Name, blank Phone, Joined (today), Expiry, blank for Days/Status (auto), Birthday, 50, Link, blank Notes
+      const row = [
+        '',                  // # (auto-formula)
+        currentName,         // Member Name
+        '',                  // Phone (you fill at till)
+        todayStr,            // Date Joined
+        expiryStr,           // Expiry Date
+        '',                  // Days Left (auto)
+        '',                  // Status (auto)
+        bdayStr,             // Birthday
+        '50',                // Paid (£)
+        currentLink,         // Invite Link
+        ''                   // Notes
+      ].join('\t');
+      navigator.clipboard.writeText(row).then(() => {
+        const btn = document.getElementById('copyTrackerBtn');
+        btn.textContent = '✓ Copied — paste into the spreadsheet';
+        btn.classList.add('copied');
+        setTimeout(() => {
+          btn.textContent = '📋 Copy Row for Tracker Spreadsheet';
+          btn.classList.remove('copied');
+        }, 3000);
+      });
+    }
+
     function showWhatsApp() {
       if (!currentLink) return;
       const firstName = currentName.split(' ')[0];
@@ -553,6 +714,7 @@
         "You've been personally selected as a Dough VIP member.\n\n" +
         'Your private gold card is waiting — tap the link below for your exclusive offers:\n\n' +
         currentLink + '\n\n' +
+        '👉 Once open, tap the Share icon → "Add to Home Screen" so it lives as an app on your phone.\n\n' +
         'Keep this link private — it\'s just for you.\n\n— The Dough Team';
 
       // Copy to clipboard so they can paste it anywhere
